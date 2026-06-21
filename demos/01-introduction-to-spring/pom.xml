@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+             https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!--
+        Module 01 Demo: Introduction to Spring
+        =======================================
+        This project uses plain Spring Framework (spring-context) WITHOUT Spring Boot.
+        That is intentional: we want to see exactly what Spring does before Boot hides it.
+        Spring Boot is introduced in Module 02.
+    -->
+
+    <groupId>com.bank</groupId>
+    <artifactId>account-demo-01</artifactId>
+    <version>1.0.0</version>
+    <packaging>jar</packaging>
+    <name>Module 01 Demo - Introduction to Spring</name>
+
+    <properties>
+        <java.version>21</java.version>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+        <spring.version>6.1.14</spring.version>
+    </properties>
+
+    <dependencies>
+        <!-- The IoC container and annotation support - that is all we need here. -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+            <version>${spring.version}</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <!-- Lets us run: mvn compile exec:java -Dexec.mainClass="com.bank.Main" -->
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.3.0</version>
+            </plugin>
+        </plugins>
+    </build>
+</project>

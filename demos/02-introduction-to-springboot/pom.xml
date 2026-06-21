@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+             https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!--
+        Module 02 Demo: Introduction to SpringBoot
+        ==========================================
+        This project converts the Module 01 plain-Spring application to SpringBoot.
+        Compare pom.xml with demos/01-introduction-to-spring/pom.xml to see what changed:
+          - spring-boot-starter-parent replaces the individual spring-context dependency
+          - spring-boot-starter replaces spring-context (brings in auto-configuration)
+          - The main class now uses @SpringBootApplication and SpringApplication.run()
+          - application.properties replaces manual configuration
+    -->
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.3.5</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.bank</groupId>
+    <artifactId>account-demo-02</artifactId>
+    <version>1.0.0</version>
+    <name>Module 02 Demo - Introduction to SpringBoot</name>
+
+    <properties>
+        <java.version>21</java.version>
+    </properties>
+
+    <dependencies>
+        <!--
+            spring-boot-starter brings in spring-context plus auto-configuration support.
+            In Module 03 we will add spring-boot-starter-data-jdbc and mysql-connector-j.
+            In Module 04 we will add spring-boot-starter-web.
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+        </dependency>
+
+        <!--
+            spring-boot-devtools provides automatic application restart when
+            classpath files change. Scope 'runtime' means it is excluded from
+            the final packaged JAR (it is a development tool only).
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-devtools</artifactId>
+            <scope>runtime</scope>
+            <optional>true</optional>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <!-- Packages the application as a self-contained executable JAR -->
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>
