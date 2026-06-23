@@ -1,50 +1,77 @@
 # Demo: Module 08 — Introduction to Docker
 
-**Duration:** 10 minutes  
-**Prerequisite:** Java 21 and Maven installed locally; Docker Desktop running; demo app in this folder builds cleanly with `mvn package -DskipTests`
+**Duration:** 12 minutes  
+**Prerequisite:** Docker Desktop running; Java 21 and Maven installed locally
 
 ---
 
-## Part 1: The problem Docker solves (2 min)
+## Part 1: Docker solves the "install MySQL" problem (3 min)
 
-Open a terminal and show the app running locally without Docker:
+Open a terminal. Before Docker, running this app meant installing and configuring MySQL locally.
+Show the alternative:
+
+```bash
+docker run -d \
+  --name stocksdb \
+  -e MYSQL_ROOT_PASSWORD=rootpass \
+  -e MYSQL_DATABASE=stocksdb \
+  -e MYSQL_USER=appuser \
+  -e MYSQL_PASSWORD=apppass \
+  -p 3306:3306 \
+  mysql:8
+```
+
+> "We just started a fully configured MySQL 8 server in one command. No installer, no wizard,
+> no path variables. The image came from Docker Hub and MySQL is running in an isolated container."
+
+Wait ~10 seconds then verify it is ready:
+
+```bash
+docker logs stocksdb
+# Look for: ready for connections
+```
+
+> "The -e flags are environment variables - the MySQL image reads these to create the database
+> and user automatically. The -p flag maps port 3306 on our machine into the container."
+
+Now run the app locally, pointing at the containerised MySQL:
 
 ```bash
 cd demos/08-docker
 mvn spring-boot:run
 ```
 
-While it starts, narrate:
+Open `http://localhost:8080/api/stocks` — data is served from MySQL running in Docker.
 
-> "This works on my machine because I have Java 21, Maven, and the right environment. If I hand this JAR to a colleague or a server, they need exactly the same setup. Docker packages the app *and* its environment together into an image."
-
-Stop the app (`Ctrl+C`).
-
-**Key talking point:** An image is the recipe; a container is the running instance — like a class vs. an object in Java.
+**Key talking point:** We did not install MySQL. We ran it. That is the first win Docker gives us.
 
 ---
 
-## Part 2: Inspect the Dockerfile (3 min)
+## Part 2: Now containerise the app itself (2 min)
 
-Open `Dockerfile` in the editor and walk through it line by line:
+> "Great - but the app still runs on our machine with Java installed. What if we want to ship
+> the app the same way we shipped MySQL - as a container?"
+
+Stop the app (`Ctrl+C`). Open `Dockerfile` and walk through it:
 
 ```dockerfile
 FROM maven:3.9-eclipse-temurin-21 AS build
 ```
-> "We start FROM an existing image that already has Maven and Java 21. The AS build gives this stage a name so we can reference it later."
+> "We start FROM an existing image that has Maven and Java 21. AS build names this stage."
 
 ```dockerfile
 WORKDIR /app
 COPY pom.xml .
 RUN mvn dependency:go-offline -q
 ```
-> "We copy the pom.xml *before* the source code. Docker caches each layer. If only the source changes, Docker reuses this cached dependency-download layer — much faster rebuilds."
+> "We copy pom.xml *before* the source code. Docker caches each layer. If only the source
+> changes, Docker reuses the cached dependency download - much faster rebuilds."
 
 ```dockerfile
 COPY src ./src
 RUN mvn package -DskipTests -q
 ```
-> "Now we copy source and compile. Skipping tests here because CI will run them separately."
+> "Now we copy source and compile. We skip tests here - CI will run them in Module 09."
 
 ```dockerfile
 FROM eclipse-temurin:21-jre-alpine
@@ -53,47 +80,68 @@ COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]
 ```
-> "The second FROM starts a brand-new, much smaller image — just a JRE, no Maven, no source code. We COPY only the JAR from the build stage. This is called a multi-stage build. The final image is typically 10x smaller than if we used the Maven image."
+> "The second FROM starts a fresh, much smaller image - just a JRE, no Maven, no source.
+> We COPY only the JAR from the build stage. This is a multi-stage build. The final image
+> is typically 6-8x smaller than using the Maven image throughout."
 
 ---
 
-## Part 3: Build and run (4 min)
+## Part 3: Build, run, and connect the two containers (5 min)
 
-Build the image:
-
-```bash
-docker build -t stock-app:demo .
-```
-
-While building, point out the layer output — especially the cache hits on a second build:
+Build the app image:
 
 ```bash
 docker build -t stock-app:demo .
 ```
 
-> "Notice CACHED next to the dependency-download step — that layer didn't run again because pom.xml didn't change."
-
-Run the container:
+Show layer output. Run a second build to demonstrate caching:
 
 ```bash
-docker run -d -p 8080:8080 --name stock-demo stock-app:demo
+docker build -t stock-app:demo .
+```
+> "Notice CACHED next to the dependency step - that layer did not run again because pom.xml
+> did not change."
+
+Now run the app container, connecting it to the MySQL container.
+We use `host.docker.internal` so the app container can reach the MySQL container via the host:
+
+```bash
+docker run -d \
+  -p 8080:8080 \
+  --name stock-app \
+  -e SPRING_DATASOURCE_URL="jdbc:mysql://host.docker.internal:3306/stocksdb?useSSL=false&allowPublicKeyRetrieval=true" \
+  -e SPRING_DATASOURCE_USERNAME=appuser \
+  -e SPRING_DATASOURCE_PASSWORD=apppass \
+  stock-app:demo
 ```
 
-Explain the flags:
-- `-d` — detached (runs in background)
-- `-p 8080:8080` — maps host port 8080 to container port 8080
-- `--name` — gives the container a friendly name
+Check logs and test:
 
-Open `http://localhost:8080` in a browser — the stock tracker frontend appears.
+```bash
+docker logs stock-app
+curl http://localhost:8080/api/stocks
+```
+
+Open `http://localhost:8080` — the stock tracker frontend loads data from the API, which reads
+from MySQL — all running in Docker.
 
 Show useful CLI commands:
 
 ```bash
-docker ps                        # running containers
-docker logs stock-demo           # app log output
-docker exec -it stock-demo sh    # shell inside the container
-docker stop stock-demo           # stop
-docker rm stock-demo             # remove
+docker ps                         # running containers
+docker logs stock-app             # app output
+docker exec -it stock-app sh      # shell inside the container
+docker stop stock-app             # stop
+docker rm stock-app               # remove
+docker stop stocksdb && docker rm stocksdb
 ```
 
-**Key message:** Docker makes the environment part of the deliverable. The same image runs identically on any machine with Docker installed.
+**Key message:** Docker makes the environment part of the deliverable. MySQL, the JRE, and the
+app itself all run from images. Any machine with Docker reproduces this environment exactly.
+
+---
+
+## Instructor notes
+
+- On Linux, use `--network host` or a Docker network instead of `host.docker.internal`
+- If port 3306 is already in use on the host, change the -p mapping: `-p 3307:3306`

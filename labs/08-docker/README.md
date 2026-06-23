@@ -1,42 +1,61 @@
 # Module 08 Lab — Introduction to Docker
 
 ## Objective
-Write a multi-stage `Dockerfile` for the Stock Tracker Spring Boot application, build and run
-it as a Docker container, then add a simple HTML/JS frontend served from inside the container.
+Run a MySQL database as a Docker container, then write a `Dockerfile` for the Stock Tracker
+Spring Boot application, build and run it as a second container, and connect the two together.
+Finally, add a simple HTML/JS frontend served from inside the Spring Boot container.
 
 ## Prerequisites
 - Docker Desktop installed and running (`docker --version` should respond)
-- Java 21 and Maven available locally (to verify the app builds before containerising)
-- The application code in this folder is complete — no Java changes are needed
+- Java 21 and Maven installed locally
 
 ## What is provided
-The `labs/08-docker/` folder contains a complete Spring Boot application that uses an H2
-in-memory database (no MySQL required). It exposes:
-- `GET  /api/stocks`           — list all stocks (JSON)
-- `GET  /api/stocks/{id}`      — get stock by id
-- `POST /api/stocks`           — add a stock
-- `GET  /api/stocks/{id}/prices` — price history
-
-On startup it seeds three stocks (HSBA, BP, AAPL) automatically.
+The `labs/08-docker/` folder contains a complete Spring Boot application (the stocks REST API
+from Module 06). It connects to MySQL on `localhost:3306`. On startup it seeds three stocks.
 
 ---
 
 ## Steps
 
-### Step 1 — Verify the app builds locally
+### Step 1 — Run MySQL in a container
+No MySQL installation needed. Pull and run the official MySQL 8 image:
+
+```bash
+docker run -d \
+  --name stocksdb \
+  -e MYSQL_ROOT_PASSWORD=rootpass \
+  -e MYSQL_DATABASE=stocksdb \
+  -e MYSQL_USER=appuser \
+  -e MYSQL_PASSWORD=apppass \
+  -p 3306:3306 \
+  mysql:8
+```
+
+Wait about 10 seconds then check it is ready:
+
+```bash
+docker logs stocksdb
+# Look for the line: ready for connections
+```
+
+---
+
+### Step 2 — Verify the app runs locally against the containerised MySQL
 ```bash
 cd labs/08-docker
-mvn package -DskipTests
-java -jar target/*.jar
+mvn spring-boot:run
 ```
-Visit `http://localhost:8080/api/stocks` — you should see a JSON array of three stocks.
+
+Visit `http://localhost:8080/api/stocks` — you should see a JSON array of three stocks
+being served from MySQL running inside Docker.
+
 Stop the app (`Ctrl+C`) before moving on.
 
 ---
 
-### Step 2 — Write the Dockerfile
+### Step 3 — Write the Dockerfile
 Create a file called `Dockerfile` (no extension) in the `labs/08-docker/` folder.
-Complete each TODO below:
+Complete each TODO:
 
 ```dockerfile
 # Stage 1: build the JAR
@@ -73,80 +92,96 @@ COPY ??? app.jar
 EXPOSE ???
 
 # TODO 9: Set the command to run the JAR
-#         Hint: use ENTRYPOINT with JSON array syntax
+#         Hint: ENTRYPOINT with JSON array syntax
 ENTRYPOINT ???
 ```
 
 ---
 
-### Step 3 — Build the image
+### Step 4 — Build the image
 ```bash
 docker build -t stock-app:v1 .
 ```
 
-Watch the output. Notice each step creates a layer. Note how the FROM and dependency download
-steps are the slowest — they only run once unless `pom.xml` changes.
+Watch the output. Run the build a second time and observe the CACHED layers:
+
+```bash
+docker build -t stock-app:v1 .
+```
 
 ---
 
-### Step 4 — Run the container
+### Step 5 — Run the app container
+The app container needs to reach MySQL. We pass the datasource URL as an environment variable
+using `host.docker.internal` so the app container can reach the MySQL container via the host:
+
 ```bash
-docker run -d -p 8080:8080 --name stock-lab stock-app:v1
+docker run -d \
+  -p 8080:8080 \
+  --name stock-app \
+  -e SPRING_DATASOURCE_URL="jdbc:mysql://host.docker.internal:3306/stocksdb?useSSL=false&allowPublicKeyRetrieval=true" \
+  -e SPRING_DATASOURCE_USERNAME=appuser \
+  -e SPRING_DATASOURCE_PASSWORD=apppass \
+  stock-app:v1
 ```
 
-Verify it is running:
+Verify it is running and test the API:
+
 ```bash
 docker ps
-docker logs stock-lab
-```
-
-Test the API:
-```bash
+docker logs stock-app
 curl http://localhost:8080/api/stocks
 ```
 
 ---
 
-### Step 5 — Add a frontend
+### Step 6 — Add a frontend
 Create `src/main/resources/static/index.html` with an HTML page that:
 1. Has a heading "Stock Tracker"
 2. Uses `fetch('/api/stocks')` to load stocks from the API
 3. Displays them in a `<table>` with columns: Symbol, Company, Sector, Exchange
 
 Rebuild and re-run:
+
 ```bash
-docker stop stock-lab && docker rm stock-lab
+docker stop stock-app && docker rm stock-app
 docker build -t stock-app:v2 .
-docker run -d -p 8080:8080 --name stock-lab stock-app:v2
+docker run -d -p 8080:8080 --name stock-app \
+  -e SPRING_DATASOURCE_URL="jdbc:mysql://host.docker.internal:3306/stocksdb?useSSL=false&allowPublicKeyRetrieval=true" \
+  -e SPRING_DATASOURCE_USERNAME=appuser \
+  -e SPRING_DATASOURCE_PASSWORD=apppass \
+  stock-app:v2
 ```
 
-Open `http://localhost:8080` in a browser — your table should appear.
+Open `http://localhost:8080` in a browser — your table should be populated with stocks.
 
 ---
 
-### Step 6 — Explore useful Docker commands
+### Step 7 — Explore useful Docker commands
 ```bash
 docker ps                          # list running containers
 docker ps -a                       # include stopped containers
-docker logs stock-lab              # view application output
-docker exec -it stock-lab sh       # open a shell inside the container
-docker stop stock-lab              # stop the container
-docker rm stock-lab                # remove the container
+docker logs stock-app              # view application output
+docker exec -it stock-app sh       # shell inside the container
+docker stop stock-app              # stop
+docker rm stock-app                # remove
 docker images                      # list local images
 docker rmi stock-app:v1            # remove an image
+docker stop stocksdb && docker rm stocksdb
 ```
 
 ---
 
 ## Acceptance Criteria
+- MySQL runs as a Docker container with no local MySQL installation
 - `docker build` completes without errors
-- `docker run -p 8080:8080` starts the container and `GET /api/stocks` returns three stocks
-- The second build (after `pom.xml` is unchanged) shows `CACHED` for the dependency layer
-- `http://localhost:8080` serves your HTML page with the stocks table populated
+- The app container starts and `GET /api/stocks` returns three stocks
+- The second build (unchanged `pom.xml`) shows CACHED for the dependency layer
+- `http://localhost:8080` serves your HTML page with stocks loaded from the API
 
 ## Key Questions
-1. Why do we COPY `pom.xml` and run `mvn dependency:go-offline` *before* copying `src/`?
+1. Why do we COPY `pom.xml` and run `mvn dependency:go-offline` before copying `src/`?
 2. Why does the final image use `eclipse-temurin:21-jre-alpine` instead of the Maven image?
 3. What is the difference between `EXPOSE` and `-p` in `docker run`?
-4. What happens to the H2 data when the container is stopped and restarted?
-5. How would you pass a different port to the app at runtime without rebuilding the image?
+4. Why do we pass `SPRING_DATASOURCE_URL` as an environment variable rather than baking it into `application.properties`?
+5. What would happen to the data in MySQL if you ran `docker rm stocksdb`?
