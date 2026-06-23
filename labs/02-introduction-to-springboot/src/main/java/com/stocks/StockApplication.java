@@ -34,17 +34,36 @@ import org.springframework.context.annotation.Bean;
  *
  * Run with:  mvn spring-boot:run
  */
-public class StockApplication {   // TODO: add @SpringBootApplication
+@SpringBootApplication
+public class StockApplication {
 
     public static void main(String[] args) {
-        // TODO: replace with SpringApplication.run(...)
-        System.out.println("TODO: start the SpringBoot application");
+        SpringApplication.run(StockApplication.class, args);
     }
 
-    // TODO: add @Bean and complete this CommandLineRunner method
+    @Bean
     CommandLineRunner demo(StockService stockService, AppProperties props) {
         return args -> {
-            // TODO: implement demo output
+            System.out.println("Service: " + props.getServiceName() + " v" + props.getVersion());
+            System.out.println("Max stocks: " + props.getMaxStocks());
+
+            stockService.addStock(new Stock(null, "BARC.L", "Barclays PLC", "Financials", "LSE"));
+            stockService.addStock(new Stock(null, "LLOY.L", "Lloyds Banking Group", "Financials", "LSE"));
+            stockService.addStock(new Stock(null, "HSBA.L", "HSBC Holdings", "Financials", "LSE"));
+            stockService.addStock(new Stock(null, "NWG.L", "NatWest Group", "Financials", "LSE"));
+
+            System.out.println("\nAll stocks:");
+            stockService.getAllStocks().forEach(System.out::println);
+
+            System.out.println("\nGet stock by ID 2:");
+            stockService.getStockById(2L).ifPresent(System.out::println);
+
+            System.out.println("\nAttempting duplicate symbol:");
+            try {
+                stockService.addStock(new Stock(null, "BARC.L", "Duplicate", "Financials", "LSE"));
+            } catch (IllegalArgumentException e) {
+                System.out.println("Caught: " + e.getMessage());
+            }
         };
     }
 }

@@ -34,19 +34,47 @@ import java.util.List;
 @Repository
 public class JdbcHistoricalPriceRepository implements HistoricalPriceRepository {
 
-    // TODO 2: Add JdbcTemplate field and constructor
+    private final JdbcTemplate jdbc;
 
-    // TODO 3: Add RowMapper<HistoricalPrice> field
+    public JdbcHistoricalPriceRepository(JdbcTemplate jdbc) {
+        this.jdbc = jdbc;
+    }
+
+    private final RowMapper<HistoricalPrice> rowMapper = (rs, rowNum) -> new HistoricalPrice(
+            rs.getLong("id"),
+            rs.getLong("stock_id"),
+            rs.getDate("price_date").toLocalDate(),
+            rs.getBigDecimal("open_price"),
+            rs.getBigDecimal("close_price"),
+            rs.getBigDecimal("high_price"),
+            rs.getBigDecimal("low_price"),
+            rs.getLong("volume")
+    );
 
     @Override
     public List<HistoricalPrice> findByStockId(Long stockId) {
-        // TODO 4
-        throw new UnsupportedOperationException("Not yet implemented");
+        return jdbc.query(
+                "SELECT * FROM historical_price WHERE stock_id = ? ORDER BY price_date DESC",
+                rowMapper, stockId);
     }
 
     @Override
     public HistoricalPrice save(HistoricalPrice price) {
-        // TODO 5
-        throw new UnsupportedOperationException("Not yet implemented");
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbc.update(con -> {
+            PreparedStatement ps = con.prepareStatement(
+                    "INSERT INTO historical_price (stock_id, price_date, open_price, close_price, high_price, low_price, volume) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    Statement.RETURN_GENERATED_KEYS);
+            ps.setLong(1, price.stockId());
+            ps.setDate(2, Date.valueOf(price.priceDate()));
+            ps.setBigDecimal(3, price.openPrice());
+            ps.setBigDecimal(4, price.closePrice());
+            ps.setBigDecimal(5, price.highPrice());
+            ps.setBigDecimal(6, price.lowPrice());
+            ps.setLong(7, price.volume());
+            return ps;
+        }, keyHolder);
+        return new HistoricalPrice(keyHolder.getKey().longValue(), price.stockId(), price.priceDate(),
+                price.openPrice(), price.closePrice(), price.highPrice(), price.lowPrice(), price.volume());
     }
 }

@@ -2,8 +2,11 @@ package com.stocks.controller;
 
 import com.stocks.dto.StockResponse;
 import com.stocks.service.StockService;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * StockSearchController — to be built using an AI tool.
@@ -31,11 +34,19 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @RequestMapping("/api/stocks")
 public class StockSearchController {
 
+    private static final Logger log = LoggerFactory.getLogger(StockSearchController.class);
     private final StockService stockService;
 
     public StockSearchController(StockService stockService) {
         this.stockService = stockService;
     }
 
-    // TODO: Add the search endpoint here.
+    @GetMapping("/search")
+    public List<StockResponse> search(@RequestParam String q) {
+        if (q.isBlank()) {
+            throw new IllegalArgumentException("Search query must not be blank");
+        }
+        log.debug("Searching stocks: q={}", q);
+        return stockService.searchByName(q).stream().map(StockResponse::fromDomain).toList();
+    }
 }

@@ -4,6 +4,7 @@ import com.stocks.model.Stock;
 import com.stocks.service.StockService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -36,20 +37,31 @@ class StockSearchControllerTest {
     @MockBean
     private StockService stockService;
 
+    @MockBean(name = "seedData")
+    private ApplicationRunner seedData;
+
     private final Stock hsbc = new Stock(1L, "HSBA", "HSBC Holdings PLC", "Banking", "LSE");
 
     @Test
     void search_matchFound_returns200WithResults() throws Exception {
-        // TODO: Complete using AI-generated code (reviewed and corrected).
+        when(stockService.searchByName("HSBC")).thenReturn(List.of(hsbc));
+        mockMvc.perform(get("/api/stocks/search").param("q", "HSBC"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].symbol").value("HSBA"));
     }
 
     @Test
     void search_noMatch_returns200WithEmptyArray() throws Exception {
-        // TODO: Complete using AI-generated code (reviewed and corrected).
+        when(stockService.searchByName("nomatch")).thenReturn(List.of());
+        mockMvc.perform(get("/api/stocks/search").param("q", "nomatch"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$").isEmpty());
     }
 
     @Test
     void search_blankQuery_returns400() throws Exception {
-        // TODO: Complete using AI-generated code (reviewed and corrected).
+        mockMvc.perform(get("/api/stocks/search").param("q", "   "))
+                .andExpect(status().isBadRequest());
     }
 }

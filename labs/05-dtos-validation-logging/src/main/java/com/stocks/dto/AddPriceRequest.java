@@ -16,6 +16,15 @@ import java.time.LocalDate;
  *   lowPrice:   @NotNull, @DecimalMin("0.0001")
  *   volume:     @Min(0)  (from jakarta.validation.constraints.Min)
  */
-public class AddPriceRequest {
-    // TODO 1 and 2
-}
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+
+public record AddPriceRequest(
+        @NotNull LocalDate priceDate,
+        @NotNull @DecimalMin("0.0001") BigDecimal openPrice,
+        @NotNull @DecimalMin("0.0001") BigDecimal closePrice,
+        @NotNull @DecimalMin("0.0001") BigDecimal highPrice,
+        @NotNull @DecimalMin("0.0001") BigDecimal lowPrice,
+        @Min(0) long volume
+) {}

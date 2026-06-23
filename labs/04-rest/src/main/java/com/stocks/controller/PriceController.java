@@ -28,11 +28,25 @@ import java.util.List;
  *   with a JSON body containing "error" and "message" fields.
  *   Hint: use Map.of("error", "Bad Request", "message", ex.getMessage())
  */
+@RestController
+@RequestMapping("/api/stocks/{stockId}")
 public class PriceController {
 
-    // TODO 3: Add field and constructor
+    private final StockService service;
 
-    // TODO 4: getPrices
+    public PriceController(StockService service) {
+        this.service = service;
+    }
 
-    // TODO 5: addPrice
+    @GetMapping("/prices")
+    public List<HistoricalPrice> getPrices(@PathVariable Long stockId) {
+        return service.getPriceHistory(stockId);
+    }
+
+    @PostMapping("/prices")
+    public ResponseEntity<HistoricalPrice> addPrice(@PathVariable Long stockId, @RequestBody HistoricalPrice price) {
+        HistoricalPrice priceWithStockId = new HistoricalPrice(null, stockId, price.priceDate(),
+                price.openPrice(), price.closePrice(), price.highPrice(), price.lowPrice(), price.volume());
+        return ResponseEntity.ok(service.addPrice(priceWithStockId));
+    }
 }

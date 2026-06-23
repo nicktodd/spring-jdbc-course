@@ -24,6 +24,26 @@ import java.time.LocalDate;
  *        -H "Content-Type: application/json" \
  *        -d '{"companyName":"Test","sector":"Tech","exchange":"LSE"}'
  */
+@SpringBootApplication
 public class StockApplication {
-    // TODO 1-3
+
+    public static void main(String[] args) {
+        SpringApplication.run(StockApplication.class, args);
+    }
+
+    @Bean
+    ApplicationRunner seed(StockService stockService) {
+        return args -> {
+            if (!stockService.getAllStocks().isEmpty()) return;
+            Stock hsbc = stockService.addStock(new Stock(null, "HSBA", "HSBC Holdings", "Financials", "LSE"));
+            Stock bp   = stockService.addStock(new Stock(null, "BP",   "BP PLC",        "Energy",     "LSE"));
+            LocalDate today = LocalDate.now();
+            for (int i = 2; i >= 0; i--) {
+                stockService.addPrice(new HistoricalPrice(null, hsbc.id(), today.minusDays(i),
+                        new BigDecimal("620.10"), new BigDecimal("625.50"), new BigDecimal("628.00"), new BigDecimal("618.00"), 12000000L));
+                stockService.addPrice(new HistoricalPrice(null, bp.id(), today.minusDays(i),
+                        new BigDecimal("410.20"), new BigDecimal("415.00"), new BigDecimal("417.50"), new BigDecimal("408.00"), 8000000L));
+            }
+        };
+    }
 }

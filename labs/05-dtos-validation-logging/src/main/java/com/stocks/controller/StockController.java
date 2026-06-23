@@ -34,10 +34,39 @@ import java.util.List;
  *   private static final Logger log = LoggerFactory.getLogger(StockController.class);
  *   Log at INFO when createStock() is called (log the symbol).
  */
+import com.stocks.model.Stock;
+import java.net.URI;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+@RestController
+@RequestMapping("/api/stocks")
 public class StockController {
-    // TODO 2: field and constructor
-    // TODO 6: Logger
-    // TODO 3: getAllStocks
-    // TODO 4: getStockById
-    // TODO 5: createStock
+
+    private static final Logger log = LoggerFactory.getLogger(StockController.class);
+    private final StockService service;
+
+    public StockController(StockService service) {
+        this.service = service;
+    }
+
+    @GetMapping
+    public List<StockResponse> getAllStocks() {
+        log.debug("Listing all stocks");
+        return service.getAllStocks().stream().map(StockResponse::fromDomain).toList();
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<StockResponse> getStockById(@PathVariable Long id) {
+        return service.getStockById(id).map(StockResponse::fromDomain).map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping
+    public ResponseEntity<StockResponse> createStock(@Valid @RequestBody CreateStockRequest request) {
+        log.info("Creating stock: {}", request.symbol());
+        Stock saved = service.addStock(new Stock(null, request.symbol(), request.companyName(), request.sector(), request.exchange()));
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(saved.id()).toUri();
+        return ResponseEntity.created(location).body(StockResponse.fromDomain(saved));
+    }
 }

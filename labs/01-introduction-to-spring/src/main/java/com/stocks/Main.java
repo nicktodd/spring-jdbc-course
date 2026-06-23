@@ -5,35 +5,29 @@ import com.stocks.model.Stock;
 import com.stocks.service.StockService;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
-/**
- * Module 01 Lab entry point.
- *
- * TODO:
- *   Once you have implemented StockRepository, StockService, and AppConfig,
- *   complete this main method to:
- *
- *   1. Create an AnnotationConfigApplicationContext using AppConfig.class.
- *   2. Retrieve a StockService bean from the context.
- *   3. Add at least three stocks using addStock().
- *   4. Print all stocks using getAllStocks().
- *   5. Retrieve one stock by ID and print it.
- *   6. Demonstrate what happens when you try to add a stock with a duplicate symbol.
- *
- * Run with:  mvn compile exec:java -Dexec.mainClass="com.stocks.Main"
- */
 public class Main {
 
     public static void main(String[] args) {
+        var context = new AnnotationConfigApplicationContext(AppConfig.class);
+        StockService stockService = context.getBean(StockService.class);
 
-        // TODO: create the Spring application context
+        stockService.addStock(new Stock(null, "BARC.L", "Barclays PLC", "Financials", "LSE"));
+        stockService.addStock(new Stock(null, "LLOY.L", "Lloyds Banking Group", "Financials", "LSE"));
+        stockService.addStock(new Stock(null, "HSBA.L", "HSBC Holdings", "Financials", "LSE"));
 
-        // TODO: get the StockService bean
+        System.out.println("All stocks:");
+        stockService.getAllStocks().forEach(System.out::println);
 
-        // TODO: add sample stocks - use symbols like "BARC.L", "LLOY.L", "HSBA.L"
-        //       with sectors like "Financials" and exchange "LSE"
+        System.out.println("\nGet stock by ID 2:");
+        stockService.getStockById(2L).ifPresent(System.out::println);
 
-        // TODO: print all stocks
+        System.out.println("\nAttempting duplicate symbol:");
+        try {
+            stockService.addStock(new Stock(null, "BARC.L", "Duplicate", "Financials", "LSE"));
+        } catch (IllegalArgumentException e) {
+            System.out.println("Caught: " + e.getMessage());
+        }
 
-        // TODO: demonstrate duplicate symbol rejection
+        context.close();
     }
 }

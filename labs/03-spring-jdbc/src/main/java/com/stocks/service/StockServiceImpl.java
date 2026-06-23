@@ -28,37 +28,42 @@ import java.util.Optional;
  *
  * TODO 7: Implement getPriceHistory() - delegate to historicalPriceRepository.findByStockId().
  */
+@Service
 public class StockServiceImpl implements StockService {
 
-    // TODO 2: Add fields and constructor
+    private final StockRepository stockRepository;
+    private final HistoricalPriceRepository historicalPriceRepository;
+
+    public StockServiceImpl(StockRepository stockRepository, HistoricalPriceRepository historicalPriceRepository) {
+        this.stockRepository = stockRepository;
+        this.historicalPriceRepository = historicalPriceRepository;
+    }
 
     @Override
     public List<Stock> getAllStocks() {
-        // TODO 3
-        throw new UnsupportedOperationException("Not yet implemented");
+        return stockRepository.findAll();
     }
 
     @Override
     public Optional<Stock> getStockById(Long id) {
-        // TODO 4
-        throw new UnsupportedOperationException("Not yet implemented");
+        return stockRepository.findById(id);
     }
 
     @Override
     public Stock addStock(Stock stock) {
-        // TODO 5
-        throw new UnsupportedOperationException("Not yet implemented");
+        stockRepository.findBySymbol(stock.symbol()).ifPresent(existing -> {
+            throw new IllegalArgumentException("Duplicate symbol: " + stock.symbol());
+        });
+        return stockRepository.save(stock);
     }
 
     @Override
     public HistoricalPrice addPrice(HistoricalPrice price) {
-        // TODO 6
-        throw new UnsupportedOperationException("Not yet implemented");
+        return historicalPriceRepository.save(price);
     }
 
     @Override
     public List<HistoricalPrice> getPriceHistory(Long stockId) {
-        // TODO 7
-        throw new UnsupportedOperationException("Not yet implemented");
+        return historicalPriceRepository.findByStockId(stockId);
     }
 }

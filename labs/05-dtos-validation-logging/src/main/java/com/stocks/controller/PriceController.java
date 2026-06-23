@@ -24,8 +24,25 @@ import java.util.List;
  *   - Call service.addPrice(price)
  *   - Return ResponseEntity.ok(result)
  */
+@RestController
+@RequestMapping("/api/stocks/{stockId}")
 public class PriceController {
-    // TODO 2: field and constructor
-    // TODO 3: getPrices
-    // TODO 4: addPrice
+
+    private final StockService service;
+
+    public PriceController(StockService service) {
+        this.service = service;
+    }
+
+    @GetMapping("/prices")
+    public List<HistoricalPrice> getPrices(@PathVariable Long stockId) {
+        return service.getPriceHistory(stockId);
+    }
+
+    @PostMapping("/prices")
+    public ResponseEntity<HistoricalPrice> addPrice(@PathVariable Long stockId, @Valid @RequestBody AddPriceRequest request) {
+        HistoricalPrice price = new HistoricalPrice(null, stockId, request.priceDate(),
+                request.openPrice(), request.closePrice(), request.highPrice(), request.lowPrice(), request.volume());
+        return ResponseEntity.ok(service.addPrice(price));
+    }
 }

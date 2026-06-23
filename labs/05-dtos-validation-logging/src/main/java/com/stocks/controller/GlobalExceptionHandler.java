@@ -32,6 +32,29 @@ import java.util.stream.Collectors;
  *
  * Hint: Look at the demo GlobalExceptionHandler for the full implementation.
  */
+@RestControllerAdvice
 public class GlobalExceptionHandler {
-    // TODO 1-4
+
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, Object>> handleBadRequest(IllegalArgumentException ex) {
+        log.warn("Business rule violation: {}", ex.getMessage());
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("error", "Bad Request");
+        body.put("message", ex.getMessage());
+        body.put("timestamp", Instant.now().toString());
+        return ResponseEntity.badRequest().body(body);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String, Object>> handleValidationErrors(MethodArgumentNotValidException ex) {
+        Map<String, String> fields = ex.getBindingResult().getFieldErrors().stream()
+                .collect(Collectors.toMap(FieldError::getField, FieldError::getDefaultMessage, (a, b) -> a));
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("error", "Validation Failed");
+        body.put("fields", fields);
+        body.put("timestamp", Instant.now().toString());
+        return ResponseEntity.badRequest().body(body);
+    }
 }
