@@ -16,14 +16,16 @@ import org.springframework.stereotype.Component;
 @Component
 public class AppProperties {
 
-    // TODO: inject app.service-name
+    @Value("${app.service-name:Stock Service}")
     private String serviceName;
 
-    // TODO: inject app.version
+    @Value("${app.version:1.0.0}")
     private String version;
 
-    // TODO: inject app.max-stocks
+    @Value("${app.max-stocks:500}")
     private int maxStocks;
 
-    // TODO: add getters
+    public String getServiceName() { return serviceName; }
+    public String getVersion() { return version; }
+    public int getMaxStocks() { return maxStocks; }
 }

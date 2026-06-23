@@ -26,9 +26,40 @@ import java.time.LocalDate;
  *
  * Run: mvn spring-boot:run
  */
+@SpringBootApplication
 public class StockApplication {
 
-    // TODO 1 and 2
+    public static void main(String[] args) {
+        SpringApplication.run(StockApplication.class, args);
+    }
 
-    // TODO 3: Add CommandLineRunner @Bean
+    @Bean
+    CommandLineRunner demo(StockService stockService) {
+        return args -> {
+            Stock hsbc = stockService.addStock(new Stock(null, "HSBA.L", "HSBC Holdings", "Financials", "LSE"));
+            Stock bp   = stockService.addStock(new Stock(null, "BP.L",   "BP PLC",        "Energy",     "LSE"));
+
+            LocalDate today = LocalDate.now();
+            for (int i = 2; i >= 0; i--) {
+                stockService.addPrice(new HistoricalPrice(null, hsbc.id(), today.minusDays(i),
+                        new BigDecimal("620.10"), new BigDecimal("625.50"), new BigDecimal("628.00"), new BigDecimal("618.00"), 12000000L));
+                stockService.addPrice(new HistoricalPrice(null, bp.id(), today.minusDays(i),
+                        new BigDecimal("410.20"), new BigDecimal("415.00"), new BigDecimal("417.50"), new BigDecimal("408.00"), 8000000L));
+            }
+
+            System.out.println("\nAll stocks:");
+            stockService.getAllStocks().forEach(System.out::println);
+
+            System.out.println("\nPrice history for HSBC:");
+            stockService.getPriceHistory(hsbc.id()).forEach(p ->
+                    System.out.println("  " + p.priceDate() + " close=" + p.closePrice()));
+
+            System.out.println("\nAttempting duplicate:");
+            try {
+                stockService.addStock(new Stock(null, "HSBA.L", "Duplicate", "Financials", "LSE"));
+            } catch (IllegalArgumentException e) {
+                System.out.println("Caught: " + e.getMessage());
+            }
+        };
+    }
 }

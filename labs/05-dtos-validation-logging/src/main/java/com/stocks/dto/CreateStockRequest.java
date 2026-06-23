@@ -12,6 +12,12 @@ package com.stocks.dto;
  *   exchange:    @NotBlank  — required
  *                @Pattern(regexp = "LSE|NYSE|NASDAQ", message = "Exchange must be LSE, NYSE, or NASDAQ")
  */
-public class CreateStockRequest {
-    // TODO 1 and 2
-}
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+
+public record CreateStockRequest(
+        @NotBlank @Pattern(regexp = "[A-Z]{1,10}", message = "Symbol must be 1-10 uppercase letters") String symbol,
+        @NotBlank String companyName,
+        @NotBlank String sector,
+        @NotBlank @Pattern(regexp = "LSE|NYSE|NASDAQ", message = "Exchange must be LSE, NYSE, or NASDAQ") String exchange
+) {}

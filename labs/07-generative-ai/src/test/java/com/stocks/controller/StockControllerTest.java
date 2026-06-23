@@ -5,6 +5,7 @@ import com.stocks.service.StockService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
@@ -26,6 +27,9 @@ class StockControllerTest {
 
     @MockBean
     private StockService stockService;
+
+    @MockBean(name = "seedData")
+    private ApplicationRunner seedData;
 
     private final Stock hsbc = new Stock(1L, "HSBA", "HSBC Holdings PLC", "Banking", "LSE");
 

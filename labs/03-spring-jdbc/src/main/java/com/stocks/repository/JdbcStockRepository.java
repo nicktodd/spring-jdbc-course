@@ -41,31 +41,50 @@ import java.util.Optional;
 @Repository
 public class JdbcStockRepository implements StockRepository {
 
-    // TODO 2: Add JdbcTemplate field and constructor
+    private final JdbcTemplate jdbc;
 
-    // TODO 3: Add RowMapper<Stock> field
+    public JdbcStockRepository(JdbcTemplate jdbc) {
+        this.jdbc = jdbc;
+    }
+
+    private final RowMapper<Stock> rowMapper = (rs, rowNum) -> new Stock(
+            rs.getLong("id"),
+            rs.getString("symbol"),
+            rs.getString("company_name"),
+            rs.getString("sector"),
+            rs.getString("exchange")
+    );
 
     @Override
     public List<Stock> findAll() {
-        // TODO 4
-        throw new UnsupportedOperationException("Not yet implemented");
+        return jdbc.query("SELECT * FROM stock ORDER BY symbol", rowMapper);
     }
 
     @Override
     public Optional<Stock> findById(Long id) {
-        // TODO 5
-        throw new UnsupportedOperationException("Not yet implemented");
+        List<Stock> results = jdbc.query("SELECT * FROM stock WHERE id = ?", rowMapper, id);
+        return results.isEmpty() ? Optional.empty() : Optional.of(results.get(0));
     }
 
     @Override
     public Optional<Stock> findBySymbol(String symbol) {
-        // TODO 6
-        throw new UnsupportedOperationException("Not yet implemented");
+        List<Stock> results = jdbc.query("SELECT * FROM stock WHERE symbol = ?", rowMapper, symbol);
+        return results.isEmpty() ? Optional.empty() : Optional.of(results.get(0));
     }
 
     @Override
     public Stock save(Stock stock) {
-        // TODO 7
-        throw new UnsupportedOperationException("Not yet implemented");
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbc.update(con -> {
+            PreparedStatement ps = con.prepareStatement(
+                    "INSERT INTO stock (symbol, company_name, sector, exchange) VALUES (?, ?, ?, ?)",
+                    Statement.RETURN_GENERATED_KEYS);
+            ps.setString(1, stock.symbol());
+            ps.setString(2, stock.companyName());
+            ps.setString(3, stock.sector());
+            ps.setString(4, stock.exchange());
+            return ps;
+        }, keyHolder);
+        return new Stock(keyHolder.getKey().longValue(), stock.symbol(), stock.companyName(), stock.sector(), stock.exchange());
     }
 }

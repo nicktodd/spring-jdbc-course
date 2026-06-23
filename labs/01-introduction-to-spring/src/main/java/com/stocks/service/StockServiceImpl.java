@@ -7,32 +7,30 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * StockServiceImpl implements business logic for stock operations.
- *
- * TODO:
- *   Step 1: Add "implements StockService" to the class declaration.
- *   Step 2: Declare a private final StockRepository field.
- *   Step 3: Write a constructor that accepts StockRepository and assigns it to the field.
- *           Spring will inject the InMemoryStockRepository bean automatically.
- *   Step 4: Implement each method from the StockService interface.
- *           In addStock(), throw IllegalArgumentException if the symbol already exists.
- *
- * Why constructor injection?
- *   - The dependency is declared explicitly and cannot be null after construction.
- *   - The class can be tested without Spring by passing a mock StockRepository.
- *   - The field can be final, preventing accidental reassignment.
- */
 @Service
-public class StockServiceImpl {   // TODO: add "implements StockService"
+public class StockServiceImpl implements StockService {
 
-    // TODO: declare private final StockRepository stockRepository
+    private final StockRepository stockRepository;
 
-    // TODO: add constructor
+    public StockServiceImpl(StockRepository stockRepository) {
+        this.stockRepository = stockRepository;
+    }
 
-    // TODO: implement getAllStocks()
+    @Override
+    public List<Stock> getAllStocks() {
+        return stockRepository.findAll();
+    }
 
-    // TODO: implement getStockById(Long id)
+    @Override
+    public Optional<Stock> getStockById(Long id) {
+        return stockRepository.findById(id);
+    }
 
-    // TODO: implement addStock(Stock stock)
+    @Override
+    public Stock addStock(Stock stock) {
+        stockRepository.findBySymbol(stock.symbol()).ifPresent(existing -> {
+            throw new IllegalArgumentException("Stock with symbol " + stock.symbol() + " already exists");
+        });
+        return stockRepository.save(stock);
+    }
 }

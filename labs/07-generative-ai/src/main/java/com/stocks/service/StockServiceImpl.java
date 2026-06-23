@@ -54,8 +54,7 @@ public class StockServiceImpl implements StockService {
 
     @Override
     public List<Stock> searchByName(String query) {
-        // TODO: Delegate to stockRepository.findByCompanyNameContaining(query).
-        //   Log at DEBUG: "Searching stocks by name: query={}", query
-        throw new UnsupportedOperationException("Not yet implemented");
+        log.debug("Searching stocks by name: query={}", query);
+        return stockRepository.findByCompanyNameContaining(query);
     }
 }

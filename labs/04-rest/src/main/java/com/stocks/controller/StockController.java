@@ -32,13 +32,31 @@ import java.util.List;
  *   - Build a URI using ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(saved.id()).toUri()
  *   - Return ResponseEntity.created(location).body(saved)
  */
+@RestController
+@RequestMapping("/api/stocks")
 public class StockController {
 
-    // TODO 3: Add field and constructor
+    private final StockService service;
 
-    // TODO 4: getAllStocks
+    public StockController(StockService service) {
+        this.service = service;
+    }
 
-    // TODO 5: getStockById
+    @GetMapping
+    public List<Stock> getAllStocks() {
+        return service.getAllStocks();
+    }
 
-    // TODO 6: createStock
+    @GetMapping("/{id}")
+    public ResponseEntity<Stock> getStockById(@PathVariable Long id) {
+        return service.getStockById(id).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping
+    public ResponseEntity<Stock> createStock(@RequestBody Stock stock) {
+        Stock saved = service.addStock(stock);
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest()
+                .path("/{id}").buildAndExpand(saved.id()).toUri();
+        return ResponseEntity.created(location).body(saved);
+    }
 }

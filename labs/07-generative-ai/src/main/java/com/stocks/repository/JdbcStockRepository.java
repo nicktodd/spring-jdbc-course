@@ -70,6 +70,7 @@ public class JdbcStockRepository implements StockRepository {
         //   SQL:   SELECT * FROM stock WHERE LOWER(company_name) LIKE LOWER(?)
         //   Param: "%" + query + "%"
         //   Return the results mapped through stockRowMapper.
-        throw new UnsupportedOperationException("Not yet implemented");
+        return jdbc.query("SELECT * FROM stock WHERE LOWER(company_name) LIKE LOWER(?)",
+                stockRowMapper, "%" + query + "%");
     }
 }
